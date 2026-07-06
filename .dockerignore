@@ -1,0 +1,17 @@
+# Filtro de arquivos para o contexto de build Docker.
+# Evita que arquivos desnecessários entrem na imagem,
+# reduzindo o tamanho do build e protegendo dados locais.
+
+.git/
+.vs/
+.vscode/
+**/bin/
+**/obj/
+**/publish/
+.DS_Store
+
+# Banco SQLite local — produção usa MySQL remoto no Railway
+**/*.db
+
+# Configurações locais — produção usa variáveis de ambiente no Railway
+src/JADirect.FleetOps/JADirect.Web/appsettings.Development.json

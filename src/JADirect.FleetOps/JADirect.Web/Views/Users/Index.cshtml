@@ -1,0 +1,88 @@
+@model IEnumerable<JADirect.Domain.Entities.User>
+@* Esta View gerencia a listagem da equipe J&A Direct.
+   Implementada com Tailwind CSS, focando em usabilidade e performance.
+*@
+
+@{
+    ViewData["Title"] = "Staff Management";
+}
+
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Staff Management</h1>
+        <p class="mt-2 text-sm text-gray-600">Administrative control of J&A Direct personnel and system access.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-[#008080] flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Register New Staff</h3>
+                <p class="text-sm text-gray-600 mb-4">Click here to add a new driver or manager to the fleet.</p>
+            </div>
+            <a asp-action="Create" class="w-full py-2 px-4 bg-[#008080] text-white rounded-lg font-semibold text-center hover:bg-[#006666] transition duration-200 flex items-center justify-center no-underline">
+                <i class="ri-user-add-line mr-2"></i> Go to Registration
+            </a>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-slate-500">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Find Staff Member</h3>
+            <form asp-action="Index" method="get" class="flex flex-col gap-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name or Email</label>
+                    <input type="text" name="searchString" value="@Context.Request.Query["searchString"]" placeholder="Ex: Peter or Surname" class="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:ring-[#008080] focus:border-[#008080] outline-none" />
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 py-2 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-900 transition flex items-center justify-center text-sm">
+                        <i class="ri-search-line mr-2"></i> Apply Filter
+                    </button>
+                    <a asp-action="Index" class="py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition flex items-center justify-center text-sm no-underline">
+                        <i class="ri-refresh-line mr-2"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Staff Member</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var user in Model)
+                    {
+                        <tr class="hover:bg-teal-50/30 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full @(user.Status == JADirect.Domain.Enums.UserStatus.Active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                                    @user.Status
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-bold text-gray-900">@user.FirstName @user.Surname</div>
+                                <div class="text-sm text-gray-500">@user.Email</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-xs font-medium px-2.5 py-0.5 rounded border @(user.Role == JADirect.Domain.Enums.UserRoles.Manager ? "bg-slate-100 text-slate-800 border-slate-200" : "bg-teal-50 text-teal-800 border-teal-200")">
+                                    @user.Role
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <a asp-action="Manage" asp-route-id="@user.Id" class="text-[#008080] hover:text-[#006666] font-black no-underline tracking-widest text-xs">
+                                    MANAGE <i class="ri-arrow-right-s-line"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

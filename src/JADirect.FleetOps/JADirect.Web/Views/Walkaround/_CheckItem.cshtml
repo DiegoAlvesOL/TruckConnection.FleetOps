@@ -1,0 +1,154 @@
+@* ARQUIVO: _CheckItem.cshtml (Partial View)
+   OBJETIVO: Componente reutilizável para cada item do checklist de walkaround.
+   Suporta três estados: Good, Attention, Defect.
+   Estados Attention e Defect revelam campo de nota e câmera inline.
+   Botões de ação ocultados a pedido do cliente (Johnny).
+   O veículo nunca bloqueia independente do estado selecionado.
+   TODO: reativar botões de ação quando política de bloqueio for reconfigurada.
+   Dados transmitidos via model binding indexado para List<ChecklistItemResult> no controller.
+   RELAÇÃO: Filho de Create.cshtml. Recebe ChecklistItem + Index via Model. *@
+
+@{
+    var item = (JADirect.Domain.Entities.ChecklistItem)Model.Item;
+    int index = (int)Model.Index;
+    string fieldPrefix = $"items[{index}]";
+}
+
+<div class="check-item-card" id="card_@(item.Id)" style="
+    background: var(--bs-white);
+    border: 1.5px solid #e9ecef;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;">
+
+    @* Campos hidden para model binding — sempre enviados ao controller *@
+    <input type="hidden" name="@(fieldPrefix).ItemId"  value="@item.Id" />
+    <input type="hidden" name="@(fieldPrefix).Label"    value="@item.Label" />
+    <input type="hidden" name="@(fieldPrefix).Category" value="@item.Category" />
+
+    @* Campo de State — atualizado pelo JavaScript ao clicar nos botões *@
+    <input type="hidden"
+           name="@(fieldPrefix).State"
+           id="state_@(item.Id)"
+           value="" />
+
+    @* Campo de ActionTaken — definido automaticamente como None pelo JavaScript *@
+    <input type="hidden"
+           name="@(fieldPrefix).ActionTaken"
+           id="action_@(item.Id)"
+           value="" />
+
+    @* Campo de Note — preenchido pelo motorista quando há problema *@
+    <input type="hidden"
+           name="@(fieldPrefix).Note"
+           id="note_hidden_@(item.Id)"
+           value="" />
+
+    @* Cabeçalho do item *@
+    <div style="padding: 14px 16px 10px;">
+        <p style="font-weight: 600; color: #343a40; font-size: 0.95rem; margin: 0;">
+            @item.Label
+        </p>
+    </div>
+
+    @* Botões de estado: Good, Attention, Defect *@
+    <div style="display: flex; gap: 8px; padding: 0 16px 14px;">
+
+        <button type="button"
+                id="btn_good_@(item.Id)"
+                onclick="selectState('@item.Id', 'Good')"
+                style="flex: 1; padding: 10px 6px; border-radius: 10px;
+                       border: 1.5px solid #dee2e6; background: #fff;
+                       font-size: 0.82rem; font-weight: 600; color: #adb5bd;
+                       cursor: pointer; transition: all 0.15s ease;">
+            Good
+        </button>
+
+        <button type="button"
+                id="btn_attention_@(item.Id)"
+                onclick="selectState('@item.Id', 'Attention')"
+                style="flex: 1; padding: 10px 6px; border-radius: 10px;
+                       border: 1.5px solid #dee2e6; background: #fff;
+                       font-size: 0.82rem; font-weight: 600; color: #adb5bd;
+                       cursor: pointer; transition: all 0.15s ease;">
+            Attention
+        </button>
+
+        <button type="button"
+                id="btn_defect_@(item.Id)"
+                onclick="selectState('@item.Id', 'Defect')"
+                style="flex: 1; padding: 10px 6px; border-radius: 10px;
+                       border: 1.5px solid #dee2e6; background: #fff;
+                       font-size: 0.82rem; font-weight: 600; color: #adb5bd;
+                       cursor: pointer; transition: all 0.15s ease;">
+            Defect
+        </button>
+
+    </div>
+
+    @* Área de nota e câmera — visível apenas quando Attention ou Defect *@
+    <div id="details_@(item.Id)"
+         style="display: none; border-top: 1px solid #e9ecef; padding: 14px 16px;">
+
+        <label style="font-size: 0.8rem; font-weight: 600; color: #6c757d;
+                      margin-bottom: 6px; display: block;">
+            <span id="note_label_@(item.Id)">Describe what you found</span>
+            <span style="color: #dc3545;"> *</span>
+        </label>
+
+        <textarea id="note_input_@(item.Id)"
+                  rows="2"
+                  placeholder="Add a note..."
+                  oninput="updateNote('@item.Id', this.value)"
+                  style="width: 100%; border: 1.5px solid #dee2e6;
+                         border-radius: 10px; padding: 10px 12px;
+                         font-size: 0.9rem; resize: none;
+                         margin-bottom: 12px; font-family: inherit;"></textarea>
+
+        @* Câmera — abre direto a câmera traseira em mobile via capture="environment" *@
+        <div style="margin-top: 4px;">
+
+            @* Input file oculto — acionado pelo botão abaixo *@
+            <input type="file"
+                   id="photo_input_@(item.Id)"
+                   accept="image/jpeg,image/png"
+                   capture="environment"
+                   style="display: none;"
+                   onchange="handlePhotoCapture('@item.Id', this)" />
+
+            @* Botão que aciona o input — não é submit *@
+            <button type="button"
+                    id="photo_btn_@(item.Id)"
+                    onclick="document.getElementById('photo_input_@(item.Id)').click()"
+                    style="display: flex; align-items: center; gap: 8px;
+                           padding: 8px 14px; border-radius: 10px;
+                           border: 1.5px dashed #adb5bd; background: #f8f9fa;
+                           font-size: 0.82rem; font-weight: 600; color: #6c757d;
+                           cursor: pointer; width: 100%; justify-content: center;">
+                <i class="bi bi-camera-fill"></i> Take Photo
+            </button>
+
+            @* Feedback de progresso do upload *@
+            <div id="photo_status_@(item.Id)"
+                 style="display: none; margin-top: 8px; font-size: 0.78rem;
+                        color: #6c757d; text-align: center;">
+            </div>
+
+            @* Preview da foto após upload bem-sucedido *@
+            <div id="photo_preview_@(item.Id)" style="display: none; margin-top: 10px;">
+                <img id="photo_img_@(item.Id)"
+                     src=""
+                     alt="Photo preview"
+                     style="width: 100%; border-radius: 10px;
+                            border: 1.5px solid #dee2e6; object-fit: cover;
+                            max-height: 180px;" />
+                <p style="font-size: 0.75rem; color: #3B6D11;
+                           margin-top: 4px; text-align: center;">
+                    <i class="bi bi-check-circle"></i> Photo uploaded successfully
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>

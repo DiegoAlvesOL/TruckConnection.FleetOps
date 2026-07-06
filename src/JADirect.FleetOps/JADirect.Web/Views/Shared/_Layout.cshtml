@@ -1,0 +1,241 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@ViewData["Title"] - JADirect</title>
+    
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .glass-nav {
+            background: rgba(0, 128, 128, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 0.5rem;
+            min-width: 220px;
+            margin-top: 10px !important;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f0fdfa;
+            color: #0d9488;
+            transform: translateX(5px);
+        }
+
+        .nav-link-custom {
+            position: relative;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            color: rgba(240, 253, 250, 0.9);
+            text-decoration: none;
+        }
+
+        .nav-link-custom:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .dropdown-toggle::after {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+<header>
+    <nav class="glass-nav sticky top-0 z-50 text-white shadow-lg mb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+
+                <div class="flex items-center space-x-6">
+
+                    @* Logo redireciona para o dashboard correto baseado no papel do usuário *@
+                    @if (User.Identity.IsAuthenticated && User.IsInRole("Manager"))
+                    {
+                        <a asp-controller="Manager" asp-action="Index" class="flex items-center no-underline mr-4">
+                            <img src="~/images/logo-white.png" alt="JA Direct Logo" class="h-10 w-auto object-contain" />
+                        </a>
+                    }
+                    else if (User.Identity.IsAuthenticated)
+                    {
+                        <a asp-controller="Driver" asp-action="SelectVehicle" class="flex items-center no-underline mr-4">
+                            <img src="~/images/logo-white.png" alt="JA Direct Logo" class="h-10 w-auto object-contain" />
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="flex items-center no-underline mr-4">
+                            <img src="~/images/logo-white.png" alt="JA Direct Logo" class="h-10 w-auto object-contain" />
+                        </a>
+                    }
+
+                    @if (User.Identity.IsAuthenticated && User.IsInRole("Manager"))
+                    {
+                    <div class="hidden md:flex items-center space-x-2">
+                        <a asp-controller="Manager" asp-action="Index" class="nav-link-custom">
+                            <i class="ri-dashboard-3-line mr-2 text-teal-200"></i>
+                            <span class="text-sm font-semibold">Dashboard</span>
+                        </a>
+
+                        <div class="dropdown">
+                            <a href="#" class="nav-link-custom dropdown-toggle" id="fleetMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="ri-truck-line mr-2 text-teal-200"></i>
+                                <span class="text-sm font-semibold">Fleet Manager</span>
+                                <i class="ri-arrow-down-s-line ml-1 text-teal-300"></i>
+                            </a>
+                            <ul class="dropdown-menu animate-in fade-in slide-in-from-top-2" aria-labelledby="fleetMenu">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Vehicles" asp-action="Index">
+                                        <i class="ri-steering-line mr-3 text-teal-600"></i> Vehicles Fleet
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Walkaround" asp-action="History">
+                                        <i class="ri-shield-check-line mr-3 text-teal-600"></i> Audit History
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <a asp-controller="Users" asp-action="Index" class="nav-link-custom">
+                            <i class="ri-group-line mr-2 text-teal-200"></i>
+                            <span class="text-sm font-semibold">Team</span>
+                        </a>
+                    </div>
+                    }
+                </div>
+
+                <div class="flex items-center">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                    <div class="dropdown">
+                        <button class="flex items-center space-x-3 focus:outline-none dropdown-toggle border-0 bg-transparent text-white"
+                                type="button"
+                                id="userMenu"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+
+                            <div class="text-right hidden sm:block">
+                                <p class="text-[10px] text-teal-200 uppercase tracking-widest leading-none mb-1 font-bold">@User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value</p>
+                                <p class="text-sm font-bold">@User.Identity.Name</p>
+                            </div>
+
+                            <div class="h-10 w-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center border border-white/40 transition-all shadow-inner">
+                                <i class="ri-user-settings-line text-lg"></i>
+                            </div>
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li>
+                                <div class="px-4 py-2 border-bottom mb-2 bg-slate-50 rounded-t-lg">
+                                    <p class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter mb-0">Logged as</p>
+                                    <p class="text-sm font-bold text-teal-800">@User.Identity.Name</p>
+                                </div>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-slate-700"
+                                   asp-controller="Users"
+                                   asp-action="ChangeOwnPassword">
+                                    <i class="ri-lock-password-line mr-3 text-teal-600"></i> Password
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider mx-2"></li>
+                            <li>
+                                <a class="dropdown-item text-red-600 font-bold" asp-controller="Account" asp-action="Logout">
+                                    <i class="ri-logout-box-r-line mr-3"></i> Sign Out
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <main role="main" class="pb-12">
+        
+        @* BLOCO DE NOTIFICAÇÕES TIPO TOAST *@
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div id="alert-success" class="mb-6 flex items-center p-4 text-teal-800 rounded-2xl bg-teal-50 border border-teal-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                <i class="ri-checkbox-circle-fill text-xl mr-3 text-teal-600"></i>
+                <div class="text-xs font-black uppercase tracking-wider">
+                    @TempData["SuccessMessage"]
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="ml-auto text-teal-500 hover:text-teal-900 transition-colors">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null || (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any())))
+        {
+            <div id="alert-error" class="mb-6 flex items-center p-4 text-red-800 rounded-2xl bg-red-50 border border-red-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                <i class="ri-error-warning-fill text-xl mr-3 text-red-600"></i>
+                <div class="text-xs font-black uppercase tracking-wider">
+                    @(TempData["ErrorMessage"] ?? "Please check the highlighted errors and try again.")
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="ml-auto text-red-500 hover:text-red-900 transition-colors">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+            </div>
+        }
+
+        @RenderBody()
+    </main>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>[x-cloak] { display: none !important; }</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const alerts = [
+            document.getElementById('alert-success'),
+            document.getElementById('alert-error')
+        ];
+
+        alerts.forEach(alert => {
+            if (alert) {
+                setTimeout(() => {
+                    alert.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => alert.remove(), 500);
+                }, 5000);
+            }
+        });
+    });
+</script>
+
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

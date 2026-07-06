@@ -1,0 +1,429 @@
+@* Purpose    : Dashboard operacional do Manager — visão geral de performance, compliance e auditoria.
+   Consumed by: ManagerController.Index (GET)
+   Layer      : Web — Presentation *@
+
+@model JADirect.Domain.Models.PerformanceReportViewModel
+
+@{
+ViewData["Title"] = "Operations Overview";
+}
+
+<style>
+    .text-teal { color: #008080; }
+
+    .btn-teal {
+        background-color: #008080;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+    .btn-teal:hover {
+        background-color: #006666;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,128,128,0.2);
+    }
+
+    .btn-cancel-hover {
+        border-radius: 12px;
+        transition: 0.3s;
+    }
+    .btn-cancel-hover:hover {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .kpi-card {
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        border: 2px solid #f1f5f9;
+        background-color: white;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        border-color: #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+    .table-modern thead th {
+        background-color: #f8fafc;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .table-modern tbody tr {
+        transition: background-color 0.2s;
+        color: #475569;
+    }
+    .table-modern tbody tr:hover {
+        background-color: rgba(0, 128, 128, 0.05) !important;
+    }
+    .table-modern td {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .badge-plate {
+        background-color: #f1f5f9;
+        color: #1e293b;
+        font-weight: 900;
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-history-link {
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-block;
+    }
+    .btn-history-link:hover {
+        transform: translateX(3px);
+        filter: brightness(0.9);
+    }
+
+    .table-footer-info {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.75rem 1rem;
+        background-color: #f8fafc;
+        border-top: 1px solid #f1f5f9;
+    }
+</style>
+
+<div class="container-fluid px-4 mt-4">
+
+    @* HEADER SECTION *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800 m-0">Operations Overview</h2>
+            <p class="text-sm text-slate-500">Real-time performance and compliance tracking.</p>
+        </div>
+        <div class="btn-group shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <a href="@Url.Action("Index", new { start = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd"), end = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd") })" class="btn btn-white border-end btn-sm px-3 fw-bold text-slate-600">Yesterday</a>
+            <a href="@Url.Action("Index", new { start = DateTime.Now.ToString("yyyy-MM-dd"), end = DateTime.Now.ToString("yyyy-MM-dd") })" class="btn btn-white border-end btn-sm px-3 fw-bold text-slate-600">Today</a>
+            <a href="@Url.Action("Index", new { start = DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd"), end = DateTime.Now.ToString("yyyy-MM-dd") })" class="btn btn-white btn-sm px-3 fw-bold text-slate-600">Last 7 Days</a>
+        </div>
+    </div>
+
+    @* FILTERS *@
+    <div class="card shadow-sm border-0 mb-4" style="border-radius: 24px; background-color: #f8fafc;">
+        <div class="card-body p-4">
+            <form asp-action="Index" method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label text-[10px] font-bold text-slate-400 text-uppercase">Start Date</label>
+                    <input type="date" name="start" value="@Model.StartDate.ToString("yyyy-MM-dd")" class="form-control border-slate-200" style="border-radius: 12px;" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-[10px] font-bold text-slate-400 text-uppercase">End Date</label>
+                    <input type="date" name="end" value="@Model.EndDate.ToString("yyyy-MM-dd")" class="form-control border-slate-200" style="border-radius: 12px;" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-[10px] font-bold text-slate-400 text-uppercase">Driver Name</label>
+                    <input type="text" name="driverName" value="@Model.DriverSearch" class="form-control border-slate-200" style="border-radius: 12px;" placeholder="Search driver..." />
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-teal w-100 py-2">SEARCH</button>
+                    <a href="@Url.Action("Index")" class="btn btn-light btn-cancel-hover w-100 py-2 text-decoration-none text-center fw-bold">CLEAR</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* KPI CARDS *@
+    <div class="row g-4 mb-5 text-center">
+        <div class="col-md-4">
+            <div class="card kpi-card p-4">
+                <div class="text-[10px] font-bold text-slate-400 text-uppercase mb-2">Deliveries</div>
+                <h2 class="text-3xl font-black text-slate-800 m-0">@Model.TotalDeliveries</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card p-4">
+                <div class="text-[10px] font-bold text-slate-400 text-uppercase mb-2">Collections</div>
+                <h2 class="text-3xl font-black text-slate-800 m-0">@Model.TotalCollections</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card p-4">
+                <div class="text-[10px] font-bold text-red-400 text-uppercase mb-2">Returns</div>
+                <h2 class="text-3xl font-black text-red-600 m-0">@Model.TotalReturns</h2>
+            </div>
+        </div>
+    </div>
+
+    @* LINHA 1: PRODUTIVIDADE *@
+    <div class="row g-4 mb-4">
+        <div class="col-md-7">
+            <section class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden h-100">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                    <h5 class="m-0 font-bold text-slate-800"><i class="ri-bar-chart-fill mr-2 text-teal"></i>Driver Performance</h5>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="table-modern">
+                        <thead>
+                        <tr>
+                            <th class="text-left ps-4">Driver</th>
+                            <th class="text-left">Plate</th>
+                            <th class="text-center">Del.</th>
+                            <th class="text-center">Col.</th>
+                            <th class="text-center">Ret.</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.DriverRanking.Take(5))
+                        {
+                        <tr>
+                            <td class="ps-4 font-bold text-slate-700">@item.DriverName</td>
+                            <td><span class="badge-plate">@item.RegistrationNo</span></td>
+                            <td class="text-center font-semibold">@item.Deliveries</td>
+                            <td class="text-center font-semibold">@item.Collections</td>
+                            <td class="text-center font-bold @(item.Returns > 0 ? "text-orange-600" : "")">@item.Returns</td>
+                        </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.DriverRanking.Count > 5)
+                {
+                <div class="table-footer-info text-center">
+                    Top 5 drivers ranking — use filters to refine results
+                </div>
+                }
+            </section>
+        </div>
+
+        <div class="col-md-5">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden h-100 d-flex flex-column">
+                <div class="p-4 border-b border-slate-100 d-flex justify-content-between align-items-center bg-slate-50/50">
+                    <div>
+                        <h6 class="m-0 font-bold text-orange-500 text-uppercase text-[11px]"><i class="ri-time-line mr-2"></i>Pending Daily Logs</h6>
+                        <small class="text-slate-400 text-[9px] font-bold uppercase">Active drivers without reports</small>
+                    </div>
+                    <span class="badge bg-orange-100 text-orange-600 rounded-pill px-3 font-black" style="font-size: 10px;">
+                        @Model.PendingDailyLogs.Count
+                    </span>
+                </div>
+                <div class="flex-grow-1 overflow-y-auto" style="max-height: 350px;">
+                    <div class="divide-y divide-slate-50">
+                        @if (!Model.PendingDailyLogs.Any())
+                        {
+                        <div class="p-5 text-center text-slate-400 italic text-sm">No pending logs for today.</div>
+                        }
+                        @foreach (var log in Model.PendingDailyLogs)
+                        {
+                        <div class="p-3 d-flex justify-content-between align-items-center hover:bg-slate-50 transition-colors">
+                            <div>
+                                <span class="font-bold text-slate-700 text-sm">@log.DriverName</span>
+                                <div class="text-[9px] text-slate-400 font-bold uppercase">@log.Message</div>
+                            </div>
+                            @* alteração aqui: botão funcional com dados do motorista para o modal *@
+                            <button type="button"
+                                    class="btn btn-sm btn-teal rounded-xl px-3 py-1"
+                                    style="font-size: 9px;"
+                                    onclick="openRemindModal(@log.UserId, '@log.DriverName', '@log.PhoneNumber')">
+                                REMIND
+                            </button>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* LINHA 2: SEGURANÇA *@
+    <div class="row g-4 mb-5">
+
+        @* SAFETY ALERTS *@
+        <div class="col-md-6">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden h-100">
+                <div class="p-4 border-b border-slate-100 d-flex justify-content-between align-items-center bg-red-50/30">
+                    <h6 class="m-0 font-bold text-red-500 text-uppercase text-[11px]"><i class="ri-shield-flash-line mr-2"></i>Safety Alerts (Critical)</h6>
+                </div>
+                <div class="p-2 overflow-y-auto" style="max-height: 350px;">
+                    @if (!Model.PendingWalkarounds.Any())
+                    {
+                    <div class="p-4 text-slate-400 text-sm text-center italic">Vehicles fully inspected.</div>
+                    }
+                    @foreach (var walk in Model.PendingWalkarounds)
+                    {
+                    <div class="m-2 p-3 bg-red-50 rounded-2xl border border-red-100">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="font-black text-slate-800 text-xs">@walk.RegistrationNo</span>
+                                <div class="text-[10px] text-slate-500 mt-1">Driver: <strong>@walk.DriverName</strong></div>
+                                <div class="mt-2">
+                                    <a href="@Url.Action("History", "Walkaround", new { id = walk.VehicleId })"
+                                       class="btn-history-link text-[9px] font-black text-red-600 border border-red-200 bg-white px-2 py-1 rounded-md uppercase">
+                                        <i class="ri-error-warning-line mr-1"></i>View Defects History
+                                    </a>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-bold text-red-600 bg-white border border-red-200 px-2 py-1 rounded-lg uppercase">
+                                    @walk.Message
+                                </span>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* INSPECTION STATUS *@
+        <div class="col-md-6">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden h-100">
+                <div class="p-4 border-b border-slate-100 d-flex justify-content-between align-items-center bg-blue-50/30">
+                    <h6 class="m-0 font-bold text-blue-600 text-uppercase text-[11px]"><i class="ri-calendar-check-line mr-2"></i>Inspection Status (Upcoming)</h6>
+                </div>
+                <div class="p-3 overflow-y-auto" style="max-height: 350px;">
+                    @if (!Model.ExpiringInspections.Any())
+                    {
+                    <div class="p-4 text-slate-400 text-sm text-center italic">All vehicles are up to date.</div>
+                    }
+                    @foreach (var exp in Model.ExpiringInspections)
+                    {
+                    <div class="mb-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge-plate" style="background-color: #eff6ff;">@exp.RegistrationNo</span>
+                            <div class="text-[10px] text-blue-700 font-bold mt-1 uppercase">@exp.Message</div>
+                            <div class="mt-2">
+                                <a href="@Url.Action("History", "Walkaround", new { id = exp.VehicleId })"
+                                   class="btn-history-link text-[9px] font-black text-blue-600 border border-blue-100 bg-white px-2 py-1 rounded-md uppercase">
+                                    <i class="ri-time-line mr-1"></i>Check Timeline
+                                </a>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-bold text-slate-400">@exp.DriverName</span>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* AUDIT TABLE *@
+    <section class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-5">
+        <div class="p-4 border-b border-slate-100 d-flex justify-content-between align-items-center bg-slate-50/50">
+            <h5 class="m-0 font-bold text-slate-800">Log Detailing (Audit)</h5>
+            <button type="button"
+                    onclick="window.location.href='@Url.Action("ExportExcel", "Manager", new { start = Model.StartDate.ToString("yyyy-MM-dd"), end = Model.EndDate.ToString("yyyy-MM-dd"), driverName = Model.DriverSearch })'"
+                    class="btn btn-sm btn-outline-success border-2 rounded-xl font-bold text-[10px] uppercase px-3">
+                <i class="ri-file-excel-2-line mr-1"></i> Export Excel
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="table-modern">
+                <thead>
+                <tr>
+                    <th class="text-left ps-4">Date</th>
+                    <th class="text-left">Driver</th>
+                    <th class="text-left">Plate</th>
+                    <th class="text-center">Deliveries</th>
+                    <th class="text-center">Collections</th>
+                    <th class="text-center">Returns</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var log in Model.DetailedLogs.Take(20))
+                {
+                <tr>
+                    <td class="ps-4 font-bold text-slate-500 text-sm">@log.LogDate.ToString("dd/MM/yyyy")</td>
+                    <td class="font-bold text-slate-700">@log.DriverName</td>
+                    <td><span class="badge-plate">@log.RegistrationNo</span></td>
+                    <td class="text-center font-semibold">@log.Deliveries</td>
+                    <td class="text-center font-semibold">@log.Collections</td>
+                    <td class="text-center font-bold">@log.Returns</td>
+                </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.DetailedLogs.Count > 20)
+        {
+        <div class="table-footer-info text-center">
+            Showing 20 records — use Export Excel to access the full dataset
+        </div>
+        }
+    </section>
+
+</div>
+
+@* alteração aqui: modal de confirmação do botão REMIND individual *@
+<div class="modal fade" id="remindModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title font-bold text-slate-800">Send WhatsApp Reminder</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="text-slate-600 text-sm mb-1">
+                    You are about to send a daily log reminder to:
+                </p>
+                <p class="font-bold text-slate-800 mb-1" id="remindDriverName"></p>
+                <p class="text-slate-400 text-xs" id="remindDriverPhone"></p>
+                <p class="text-slate-500 text-sm mt-3">Do you want to proceed?</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light btn-cancel-hover rounded-xl fw-bold"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-teal rounded-xl fw-bold"
+                        id="remindConfirmBtn">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* alteração aqui: script do modal REMIND *@
+<script>
+    let pendingDriverId = null;
+
+    function openRemindModal(driverId, driverName, driverPhone) {
+        pendingDriverId = driverId;
+        document.getElementById('remindDriverName').textContent = driverName;
+        document.getElementById('remindDriverPhone').textContent = driverPhone;
+        new bootstrap.Modal(document.getElementById('remindModal')).show();
+    }
+
+    document.getElementById('remindConfirmBtn').addEventListener('click', async function () {
+        if (!pendingDriverId) return;
+
+        this.disabled = true;
+        this.textContent = 'Sending...';
+
+        const response = await fetch('@Url.Action("RemindDriver", "Manager")', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'driverId=' + pendingDriverId
+        });
+
+        const result = await response.json();
+
+        bootstrap.Modal.getInstance(document.getElementById('remindModal')).hide();
+
+        if (result.success) {
+            alert(result.message);
+        } else {
+            alert('Error: ' + result.message);
+        }
+
+        this.disabled = false;
+        this.textContent = 'Send';
+        pendingDriverId = null;
+    });
+</script>

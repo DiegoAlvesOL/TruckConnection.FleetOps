@@ -1,0 +1,102 @@
+@model IEnumerable<JADirect.Domain.Entities.Vehicle>
+@using JADirect.Domain.Enums
+
+@* View de Gestão de Frota (Fleet Management)
+   Padronizada com a identidade visual da tela de Staff (Tailwind CSS).
+*@
+
+@{
+    ViewData["Title"] = "Fleet Management";
+}
+
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    
+    @* Header da Página *@
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Fleet Management</h1>
+        <p class="mt-2 text-sm text-gray-600">Complete control of J&A Direct vehicles, maintenance status, and registration.</p>
+    </div>
+
+    @* Grid de Ações Rápidas (Registro e Busca) *@
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        
+        @* Card: Registrar Novo Veículo *@
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-[#008080] flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Register New Vehicle</h3>
+                <p class="text-sm text-gray-600 mb-4">Add a new van, truck, or car to the operational fleet database.</p>
+            </div>
+            <a asp-action="Create" class="w-full py-2 px-4 bg-[#008080] text-white rounded-lg font-semibold text-center hover:bg-[#006666] transition duration-200 flex items-center justify-center no-underline">
+                <i class="ri-truck-line mr-2"></i> Go to Registration
+            </a>
+        </div>
+
+        @* Card: Buscar Veículo *@
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-slate-500">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Find Vehicle</h3>
+            <form asp-action="Index" method="get" class="flex flex-col gap-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Registration or Model</label>
+                    <input type="text" name="searchString" value="@Context.Request.Query["searchString"]" placeholder="Ex: 241-D-1234 or Ford Transit" class="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:ring-[#008080] focus:border-[#008080] outline-none" />
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 py-2 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-900 transition flex items-center justify-center text-sm">
+                        <i class="ri-search-line mr-2"></i> Apply Filter
+                    </button>
+                    <a asp-action="Index" class="py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition flex items-center justify-center text-sm no-underline">
+                        <i class="ri-refresh-line mr-2"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Tabela de Dados *@
+    <div class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Vehicle Details</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type / Mileage</th>
+                        <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach (var vehicle in Model)
+                    {
+                        <tr class="hover:bg-teal-50/30 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @{
+                                    var statusColor = vehicle.Status switch {
+                                        VehicleStatus.Active => "bg-green-100 text-green-800",
+                                        VehicleStatus.Maintenance => "bg-yellow-100 text-yellow-800",
+                                        VehicleStatus.Blocked => "bg-red-100 text-red-800",
+                                        _ => "bg-gray-100 text-gray-800"
+                                    };
+                                }
+                                <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full @statusColor">
+                                    @vehicle.Status
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-bold text-gray-900">@vehicle.RegistrationNo</div>
+                                <div class="text-sm text-gray-500">@vehicle.Manufacturer @vehicle.Model</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-xs font-medium text-slate-600 uppercase">@vehicle.VehicleType</div>
+                                <div class="text-xs text-gray-400 font-bold">@vehicle.CurrentKm.ToString("N0") KM</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <a asp-action="Manage" asp-route-id="@vehicle.Id" class="text-[#008080] hover:text-[#006666] font-black no-underline tracking-widest text-xs">
+                                    MANAGE <i class="ri-arrow-right-s-line"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

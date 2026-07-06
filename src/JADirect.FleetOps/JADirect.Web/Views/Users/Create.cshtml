@@ -1,0 +1,104 @@
+@model JADirect.Domain.Entities.User
+@using JADirect.Domain.Enums
+
+@{
+    ViewData["Title"] = "New Staff Member";
+}
+
+<style>
+    
+    .text-teal { color: #008080; }
+    
+    .btn-save-teal {
+        background-color: #008080;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    .btn-save-teal:hover {
+        background-color: #006666;
+        transform: scale(1.02); /* Aumenta levemente */
+        color: white;
+    }
+
+    
+    .btn-cancel-hover {
+        border-radius: 10px;
+        transition: 0.3s;
+    }
+    .btn-cancel-hover:hover {
+        background-color: #f8d7da; /* Fundo avermelhado suave */
+        color: #721c24;
+    }
+</style>
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-action="Index" class="text-decoration-none" style="color: #008080;">Users</a>
+            </li>
+            <li class="breadcrumb-item active">New Registration</li>
+        </ol>
+    </nav>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0" style="border-radius: 20px">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold mb-4 text-center text-teal">Register Employee</h2>
+                    
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold">FIRST NAME</label>
+                                <input asp-for="FirstName" class="form-control" style="border-radius: 10px;" required/>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold">SURNAME</label>
+                                <input asp-for="Surname" class="form-control" style="border-radius: 10px;" required/>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">EMAIL (LOGIN)</label>
+                            <input asp-for="Email" type="email" class="form-control" style="border-radius: 10px;" required/>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">PHONE NUMBER</label>
+                            <input asp-for="PhoneNumber" class="form-control" style="border-radius: 10px;" placeholder="+353 8X XXX XXXX"/>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">POSITION/ROLE</label>
+                            <select asp-for="Role" class="form-select" style="border-radius: 10px"
+                                    asp-items="Html.GetEnumSelectList<UserRoles>()">
+                                <option value="">-- Select Access Level --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-secondary small fw-bold">TEMPORARY PASSWORD</label>
+                            <input type="password" name="plainPassword" class="form-control" style="border-radius: 10px;" required/>
+                            <div class="form-text">The driver must change this password upon first access.</div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-save-teal w-100 py-2">
+                                Save Employee
+                            </button>
+                            <a asp-action="Index" class="btn btn-light btn-cancel-hover w-100 py-2">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

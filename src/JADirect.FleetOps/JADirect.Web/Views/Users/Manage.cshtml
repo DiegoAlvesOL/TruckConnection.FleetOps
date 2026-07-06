@@ -1,0 +1,459 @@
+@using JADirect.Domain.Enums
+@model JADirect.Domain.Models.UserManagementViewModel
+
+@{
+ViewData["Title"] = "Manage - " + Model.DisplayName;
+}
+
+<div class="max-w-6xl mx-auto py-10 px-4">
+
+    @* Mensagem de Sucesso *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+    <div class="mb-6 p-4 bg-green-50 border-l-4 border-[#008080] text-[#006666] font-bold rounded shadow-sm flex items-center">
+        <i class="ri-checkbox-circle-fill mr-2 text-xl"></i> @TempData["SuccessMessage"]
+    </div>
+    }
+
+    @* Mensagem de Erro *@
+    @if (TempData["ErrorMessage"] != null)
+    {
+    <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-600 font-bold rounded shadow-sm flex items-center">
+        <i class="ri-error-warning-fill mr-2 text-xl"></i> @TempData["ErrorMessage"]
+    </div>
+    }
+
+    @* Back Link *@
+    <div class="mb-6">
+        <a asp-action="Index" class="text-sm font-bold text-[#008080] hover:text-[#006666] flex items-center no-underline">
+            <i class="ri-arrow-left-line mr-1"></i> Back to Staff List
+        </a>
+    </div>
+
+    @* Main Card *@
+    <div class="bg-white shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+
+        @* Header *@
+        <div class="bg-gray-50 p-8 border-b border-gray-200">
+            <div class="flex items-center">
+                <div class="h-20 w-20 bg-[#008080] rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                    @(!string.IsNullOrEmpty(Model.FirstName) ? Model.FirstName.Substring(0, 1) : "?")
+                </div>
+                <div class="ml-6">
+                    <h2 class="text-2xl font-bold text-gray-900">@Model.DisplayName</h2>
+                    <p class="text-gray-500">@Model.Email</p>
+                    <div class="mt-2">
+                        <span class="px-3 py-1 text-xs font-bold rounded-full border @Model.StatusClasses">
+                            @Model.StatusLabel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Main Content *@
+        <div class="p-8">
+
+            @* Two Column Layout *@
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+
+                @* LEFT COLUMN: Dados Pessoais *@
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Personal Information</h3>
+
+                    <form asp-action="UpdateStaff" method="post" class="space-y-6">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="UserId" value="@Model.UserId" />
+                        <input type="hidden" name="AvailabilityPeriodId" value="@Model.AvailabilityPeriodId" />
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">First Name</label>
+                                <input type="text" name="FirstName" value="@Model.FirstName" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none font-semibold text-gray-800" required />
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">Surname</label>
+                                <input type="text" name="Surname" value="@Model.Surname" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none font-semibold text-gray-800" required />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">Contact Email</label>
+                            <input type="email" name="Email" value="@Model.Email" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none font-semibold text-gray-800" required />
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">Phone Number</label>
+                            <input type="tel" name="PhoneNumber" value="@Model.PhoneNumber" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none font-semibold text-gray-800" />
+                        </div>
+
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">Access Level (Role)</label>
+                            <select name="Role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none font-semibold text-gray-800 appearance-none" required>
+                                @foreach (var role in Enum.GetValues(typeof(UserRoles)))
+                                {
+                                @if (Model.Role == (UserRoles)role)
+                                {
+                                <option value="@((int)role)" selected>@role</option>
+                                }
+                                else
+                                {
+                                <option value="@((int)role)">@role</option>
+                                }
+                                }
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 bg-[#008080] text-white rounded-xl font-bold hover:bg-[#006666] transition-all shadow-lg shadow-teal-100 flex items-center justify-center">
+                            <i class="ri-save-3-line mr-2 text-xl"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+
+                @* RIGHT COLUMN: Disponibilidade *@
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Availability Status</h3>
+
+                    <form asp-action="UpdateStaff" method="post" class="space-y-6">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="UserId" value="@Model.UserId" />
+                        <input type="hidden" name="AvailabilityPeriodId" value="@Model.AvailabilityPeriodId" />
+                        <input type="hidden" name="FirstName" value="@Model.FirstName" />
+                        <input type="hidden" name="Surname" value="@Model.Surname" />
+                        <input type="hidden" name="Email" value="@Model.Email" />
+                        <input type="hidden" name="PhoneNumber" value="@Model.PhoneNumber" />
+                        <input type="hidden" name="Role" value="@((int)Model.Role)" />
+
+                        @* Status Selector *@
+                        <div>
+                            <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">Current Status</label>
+                            <select name="Status" id="statusSelect" onchange="toggleAvailabilityPanel()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none font-semibold text-gray-800 appearance-none" required>
+                                @{
+                                if (Model.Status == UserStatus.Active)
+                                {
+                                <option value="1" selected>Active</option>
+                                }
+                                else
+                                {
+                                <option value="1">Active</option>
+                                }
+
+                                if (Model.Status == UserStatus.OnLeave)
+                                {
+                                <option value="4" selected>On Leave</option>
+                                }
+                                else
+                                {
+                                <option value="4">On Leave</option>
+                                }
+
+                                if (Model.Status == UserStatus.Sick)
+                                {
+                                <option value="5" selected>Sick</option>
+                                }
+                                else
+                                {
+                                <option value="5">Sick</option>
+                                }
+
+                                if (Model.Status == UserStatus.Suspended)
+                                {
+                                <option value="2" selected>Suspended</option>
+                                }
+                                else
+                                {
+                                <option value="2">Suspended</option>
+                                }
+
+                                if (Model.Status == UserStatus.Canceled)
+                                {
+                                <option value="3" selected>Canceled</option>
+                                }
+                                else
+                                {
+                                <option value="3">Canceled</option>
+                                }
+                                }
+                            </select>
+                        </div>
+
+                        @* Availability Panel - Verde (como mensagens de sucesso) *@
+                        <div id="availabilityPanel" class="p-4 bg-green-50 border-2 border-[#008080] rounded-2xl space-y-4 @(Model.IsOnLeaveOrSick ? "" : "hidden")">
+
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-sm font-bold text-[#006666]">Unavailable Period</h4>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] text-[#008080] uppercase font-bold ml-1 block mb-1">From</label>
+                                    <input type="date" name="AvailabilityFromDate" id="fromDate" value="@Model.AvailabilityFromDate?.ToString("yyyy-MM-dd")" class="w-full p-2 bg-white border border-[#008080] rounded-lg focus:ring-2 focus:ring-[#008080] outline-none text-sm" />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-[#008080] uppercase font-bold ml-1 block mb-1">To</label>
+                                    <input type="date" name="AvailabilityToDate" id="toDate" value="@Model.AvailabilityToDate?.ToString("yyyy-MM-dd")" class="w-full p-2 bg-white border border-[#008080] rounded-lg focus:ring-2 focus:ring-[#008080] outline-none text-sm" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] text-[#008080] uppercase font-bold ml-1 block mb-1">Reason</label>
+                                <input type="text" name="AvailabilityReason" placeholder="e.g., Vacation, Medical Leave" value="@Model.AvailabilityReason" class="w-full p-2 bg-white border border-[#008080] rounded-lg focus:ring-2 focus:ring-[#008080] outline-none text-sm" />
+                            </div>
+
+                            @if (Model.AvailabilityToDate.HasValue)
+                            {
+                            <div class="p-3 bg-white rounded-lg border border-[#008080]">
+                                <p class="text-[11px] text-[#008080] font-semibold mb-1">Returns: <span class="font-bold">@Model.AvailabilityToDate.Value.ToString("dd MMM yyyy")</span></p>
+                                <p class="text-[10px] text-[#006666]">Will not appear in compliance alerts during this period.</p>
+                            </div>
+                            }
+
+                        </div>
+
+                        @* Static Info (When status is Active) *@
+                        <div id="activeInfo" class="p-4 bg-green-50 border-2 border-[#008080] rounded-2xl @(Model.IsOnLeaveOrSick ? "hidden" : "")">
+                            <div class="flex items-center">
+                                <i class="ri-checkbox-circle-line text-2xl text-[#008080] mr-3"></i>
+                                <div>
+                                    <p class="text-sm font-bold text-[#006666]">Currently Active</p>
+                                    <p class="text-[10px] text-[#008080] font-semibold">No period of unavailability set</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-[#008080] text-white rounded-xl font-bold hover:bg-[#006666] transition-all shadow-lg shadow-teal-100">
+                            Update Status
+                        </button>
+
+                    </form>
+                </div>
+
+            </div>
+
+            @* AVAILABILITY PERIODS TABLE *@
+            <div class="border-t border-gray-200 pt-8 mb-8"
+                 x-data="{
+                    editModalOpen: false,
+                    cancelModalOpen: false,
+                    selectedPeriodId: 0,
+                    selectedFromDate: '',
+                    selectedToDate: '',
+                    selectedReason: '',
+                    errorMessage: '',
+                    openEditModal(periodId, fromDate, toDate, reason) {
+                        this.selectedPeriodId = periodId;
+                        this.selectedFromDate = fromDate;
+                        this.selectedToDate = toDate;
+                        this.selectedReason = reason;
+                        this.errorMessage = '';
+                        this.editModalOpen = true;
+                    },
+                    openCancelModal(periodId) {
+                        this.selectedPeriodId = periodId;
+                        this.cancelModalOpen = true;
+                    },
+                    submitEdit() {
+                        if (this.selectedToDate < this.selectedFromDate) {
+                            this.errorMessage = 'The return date cannot be earlier than the start date.';
+                            return;
+                        }
+                        const formData = new FormData();
+                        formData.append('periodId', this.selectedPeriodId);
+                        formData.append('driverId', @Model.UserId);
+                        formData.append('fromDate', this.selectedFromDate);
+                        formData.append('toDate', this.selectedToDate);
+                        formData.append('reason', this.selectedReason);
+                        formData.append('__RequestVerificationToken', document.querySelector('input[name=__RequestVerificationToken]').value);
+
+                        fetch('@Url.Action("EditLeave", "Users")', { method: 'POST', body: formData })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success) {
+                                    location.reload();
+                                } else {
+                                    this.errorMessage = data.message;
+                                }
+                            });
+                    },
+                    submitCancel() {
+                        const formData = new FormData();
+                        formData.append('periodId', this.selectedPeriodId);
+                        formData.append('__RequestVerificationToken', document.querySelector('input[name=__RequestVerificationToken]').value);
+
+                        fetch('@Url.Action("CancelLeave", "Users")', { method: 'POST', body: formData })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success) {
+                                    location.reload();
+                                } else {
+                                    alert(data.message);
+                                }
+                            });
+                    }
+                 }">
+
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Active Availability Periods</h3>
+
+                @if (Model.HasActivePeriods)
+                {
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-[10px] text-gray-400 uppercase font-bold border-b border-gray-200">
+                                <th class="pb-3">Type</th>
+                                <th class="pb-3">Status</th>
+                                <th class="pb-3">From</th>
+                                <th class="pb-3">To</th>
+                                <th class="pb-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var period in Model.ActivePeriods)
+                            {
+                                var isOngoing = period.AvailabilityFromDate.Date <= DateTime.Now.Date &&
+                                                 period.AvailabilityToDate.Date >= DateTime.Now.Date;
+
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 font-semibold text-gray-800">@period.StatusDuringPeriod</td>
+                                    <td class="py-3">
+                                        @if (isOngoing)
+                                        {
+                                            <span class="px-2 py-1 text-[10px] font-bold rounded-full bg-green-50 text-[#10b981] border border-[#10b981]">Ongoing</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="px-2 py-1 text-[10px] font-bold rounded-full bg-amber-50 text-[#f59e0b] border border-[#f59e0b]">Scheduled</span>
+                                        }
+                                    </td>
+                                    <td class="py-3 text-gray-600">@period.AvailabilityFromDate.ToString("dd MMM yyyy")</td>
+                                    <td class="py-3 text-gray-600">@period.AvailabilityToDate.ToString("dd MMM yyyy")</td>
+                                    <td class="py-3 text-right">
+                                        <button type="button"
+                                                @@click="openEditModal(@period.Id, '@period.AvailabilityFromDate.ToString("yyyy-MM-dd")', '@period.AvailabilityToDate.ToString("yyyy-MM-dd")', '@period.Reason')"
+                                                class="text-xs font-semibold text-[#008080] hover:text-[#006666] mr-4">Edit Dates</button>
+                                        <button type="button"
+                                                @@click="openCancelModal(@period.Id)"
+                                                class="text-xs font-semibold text-red-500 hover:text-red-700">Cancel Leave</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-sm text-gray-400">No active availability periods.</p>
+                }
+
+                @* EDIT MODAL *@
+                <div x-show="editModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @@click.outside="editModalOpen = false">
+                        <h4 class="text-lg font-bold text-gray-900 mb-6">Edit Availability Dates</h4>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">From</label>
+                                <input type="date" x-model="selectedFromDate" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none" />
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">To</label>
+                                <input type="date" x-model="selectedToDate" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none" />
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 block mb-2">Reason</label>
+                                <input type="text" x-model="selectedReason" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#008080] outline-none" />
+                            </div>
+
+                            <p x-show="errorMessage" x-text="errorMessage" class="text-xs font-bold text-red-500"></p>
+                        </div>
+
+                        <div class="flex justify-end gap-3 mt-8">
+                            <button type="button" @@click="editModalOpen = false" class="px-5 py-2 rounded-xl border-2 border-gray-200 text-gray-500 font-semibold text-sm">Close</button>
+                            <button type="button" @@click="submitEdit()" class="px-5 py-2 rounded-xl bg-[#008080] text-white font-bold text-sm hover:bg-[#006666]">Save Dates</button>
+                        </div>
+                    </div>
+                </div>
+
+                @* CANCEL CONFIRMATION MODAL *@
+                <div x-show="cancelModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl" @@click.outside="cancelModalOpen = false">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">Cancel this leave period?</h4>
+                        <p class="text-sm text-gray-500 mb-8">If this period is currently active, the driver will be restored to Active status immediately.</p>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @@click="cancelModalOpen = false" class="px-5 py-2 rounded-xl border-2 border-gray-200 text-gray-500 font-semibold text-sm">Keep It</button>
+                            <button type="button" @@click="submitCancel()" class="px-5 py-2 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600">Cancel Leave</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            @* SECURITY PANEL - Botões compactos e centralizados *@
+            <div class="border-t border-gray-200 pt-8">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Security Actions</h3>
+
+                <div class="flex flex-wrap justify-center gap-3">
+
+                    @if (Model.IsActive)
+                    {
+                    @* Suspend *@
+                    <button type="button" onclick="if(confirm('Suspend this user access?')) { document.getElementById('deactivateForm').submit(); }"
+                            class="px-6 py-2 rounded-lg border-2 border-red-200 text-red-600 hover:bg-red-50 transition-all text-sm font-semibold">
+                        <i class="ri-shut-down-line mr-2"></i>Suspend Access
+                    </button>
+                    }
+                    else
+                    {
+                    @* Restore *@
+                    <button type="button" onclick="if(confirm('Restore this user access?')) { document.getElementById('activateForm').submit(); }"
+                            class="px-6 py-2 rounded-lg border-2 border-green-200 text-green-600 hover:bg-green-50 transition-all text-sm font-semibold">
+                        <i class="ri-checkbox-circle-line mr-2"></i>Restore Access
+                    </button>
+                    }
+
+                    @* Reset Password *@
+                    <button type="button" onclick="if(confirm('Reset password to JADirect@2026?')) { document.getElementById('resetForm').submit(); }"
+                            class="px-6 py-2 rounded-lg border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all text-sm font-semibold">
+                        <i class="ri-key-2-line mr-2"></i>Reset Password
+                    </button>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@* FORMULÁRIOS OCULTOS (Ações independentes) *@
+
+<form id="deactivateForm" asp-action="Deactivate" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.UserId" />
+</form>
+
+<form id="activateForm" asp-action="Activate" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.UserId" />
+</form>
+
+<form id="resetForm" asp-action="ResetPassword" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.UserId" />
+</form>
+
+<script>
+    function toggleAvailabilityPanel() {
+        const status = document.getElementById('statusSelect').value;
+        const panel = document.getElementById('availabilityPanel');
+        const activeInfo = document.getElementById('activeInfo');
+
+        if (status === '4' || status === '5') {
+            panel.classList.remove('hidden');
+            activeInfo.classList.add('hidden');
+        } else {
+            panel.classList.add('hidden');
+            activeInfo.classList.remove('hidden');
+        }
+    }
+</script>

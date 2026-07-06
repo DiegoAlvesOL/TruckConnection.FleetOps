@@ -1,0 +1,28 @@
+# --- C# / .NET ---
+bin/
+obj/
+publish/
+*.log
+
+# --- Banco de Dados ---
+*.db
+*.sqlite
+*.sql.gz
+
+# --- Configurações Sensíveis ---
+# appsettings.json fica no Git com placeholders — sem credenciais reais
+# Os arquivos de ambiente específicos ficam apenas na máquina local
+appsettings.Development.json
+appsettings.Production.json
+**/Properties/launchSettings.json
+
+
+# --- IDEs / Ferramentas ---
+.idea/
+.vs/
+*.user
+*.suo
+
+# --- Sistema Operacional ---
+.DS_Store
+Thumbs.db

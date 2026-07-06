@@ -1,0 +1,419 @@
+@* ARQUIVO: Create.cshtml
+   OBJETIVO: Formulário principal do walkaround check.
+   Itens carregados dinamicamente do banco via IEnumerable<ChecklistItem>.
+   Agrupamento por Category feito via LINQ no Razor.
+   JavaScript centralizado controla estado visual e status do veículo em tempo real.
+   Botões de ação ocultados. Veículo nunca bloqueia independente do estado.
+   TODO: reativar lógica de bloqueio quando política for reconfigurada com o cliente. *@
+
+@using JADirect.Domain.Entities
+@model IEnumerable<ChecklistItem>
+
+<style>
+    .section-card {
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        background-color: #fff;
+        overflow: hidden;
+    }
+    .section-header {
+        padding: 18px 20px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f8f9fa;
+        user-select: none;
+    }
+    .section-title {
+        font-weight: bold;
+        color: #008080;
+        font-size: 1rem;
+        margin: 0;
+    }
+    .section-content {
+        padding: 16px 16px 4px;
+        display: none;
+        border-top: 1px solid #e9ecef;
+    }
+    .section-content.active { display: block; }
+    .progress-container {
+        width: 70px; height: 7px;
+        background: #dee2e6;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%; width: 0%;
+        background: #008080;
+        transition: width 0.3s ease;
+    }
+    .progress-text {
+        font-size: 0.72rem;
+        color: #6c757d;
+        font-weight: bold;
+        margin-left: 8px;
+        min-width: 30px;
+    }
+    .status-bar {
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1.5px solid #e9ecef;
+        background: #f8f9fa;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+    }
+    .status-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: #adb5bd;
+        flex-shrink: 0;
+        transition: background 0.3s;
+    }
+    .btn-submit-wk {
+        min-height: 64px;
+        border-radius: 14px;
+        font-size: 1.1rem;
+        border: none;
+        background-color: #008080;
+        color: white;
+        font-weight: 700;
+        width: 100%;
+        transition: background 0.2s;
+    }
+    .btn-submit-wk:hover:not(:disabled) { background-color: #006666; }
+    .btn-submit-wk:disabled { background-color: #adb5bd; cursor: not-allowed; }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="mb-3">
+        <a asp-controller="Driver" asp-action="SelectVehicle"
+           class="text-decoration-none fw-bold" style="color: #008080;">
+            <i class="bi bi-arrow-left"></i> Back to Vehicle Selection
+        </a>
+    </div>
+
+    <div class="text-center mb-4">
+        <h2 class="fw-bold" style="color: #008080;">
+            <i class="bi bi-clipboard-check"></i> Vehicle Inspection
+        </h2>
+        <p class="text-muted px-3">
+            Select <strong>Good</strong> if the item is satisfactory,
+            <strong>Attention</strong> if there is an observation to note,
+            or <strong>Defect</strong> if a fault was found.
+        </p>
+    </div>
+
+    <form asp-action="Create" method="post" id="walkaroundForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Latitude" id="lat" />
+        <input type="hidden" name="Longitude" id="lon" />
+
+        @{
+            var groupedItems = Model.GroupBy(i => i.Category).ToList();
+            int globalIndex = 0;
+        }
+
+        @foreach (var group in groupedItems)
+        {
+            var sectionId = $"sec_{group.Key.Replace(" ", "_").Replace("&", "and")}";
+            var itemCount = group.Count();
+
+            <div class="section-card shadow-sm" id="@sectionId">
+                <div class="section-header" onclick="toggleSection('@sectionId')">
+                    <p class="section-title">@group.Key</p>
+                    <div class="d-flex align-items-center">
+                        <div class="progress-container">
+                            <div class="progress-bar-fill" id="prog_@sectionId"></div>
+                        </div>
+                        <span class="progress-text" id="txt_@sectionId">0/@itemCount</span>
+                    </div>
+                </div>
+                <div class="section-content @(group == groupedItems.First() ? "active" : "")">
+                    @foreach (var item in group)
+                    {
+                        @await Html.PartialAsync("_CheckItem", new { Item = item, Index = globalIndex })
+                        globalIndex++;
+                    }
+                </div>
+            </div>
+        }
+
+        @* Odômetro *@
+        <div class="section-card p-4 shadow-sm">
+            <label class="form-label fw-bold">
+                <i class="bi bi-speedometer2"></i> Current Odometer Reading
+            </label>
+            <input type="number" name="Odometer"
+                   class="form-control form-control-lg border-2"
+                   required min="0" placeholder="Enter current KM" />
+        </div>
+
+        @* Barra de status em tempo real *@
+        <div class="status-bar" id="statusBar">
+            <div class="status-dot" id="statusDot"></div>
+            <div>
+                <div style="font-size: 0.9rem; font-weight: 600; color: #343a40;"
+                     id="statusText">Not started</div>
+                <div style="font-size: 0.78rem; color: #6c757d;"
+                     id="statusSub">Select a state for each item to continue</div>
+            </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-submit-wk" disabled>
+            Submit Inspection
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    var totalItems = @Model.Count();
+
+    // ─── ESTADO DO CHECKLIST ─────────────────────────────────────────────────
+
+    function toggleSection(sectionId) {
+        var content = document.querySelector('#' + sectionId + ' .section-content');
+        var isActive = content.classList.contains('active');
+        document.querySelectorAll('.section-content').forEach(function(c) {
+            c.classList.remove('active');
+        });
+        if (!isActive) { content.classList.add('active'); }
+    }
+
+    function selectState(itemId, state) {
+        document.getElementById('state_' + itemId).value = state;
+        document.getElementById('action_' + itemId).value = state === 'Good' ? 'None' : 'Resolved';
+        document.getElementById('note_hidden_' + itemId).value = '';
+
+        var card      = document.getElementById('card_' + itemId);
+        var details   = document.getElementById('details_' + itemId);
+        var noteInput = document.getElementById('note_input_' + itemId);
+        var noteLabel = document.getElementById('note_label_' + itemId);
+
+        if (noteInput) { noteInput.value = ''; }
+
+        if (state === 'Good') {
+            card.style.borderColor = '#3B6D11';
+            details.style.display  = 'none';
+        } else if (state === 'Attention') {
+            card.style.borderColor = '#BA7517';
+            details.style.display  = 'block';
+            noteLabel.textContent  = 'Describe what you observed';
+        } else {
+            card.style.borderColor = '#A32D2D';
+            details.style.display  = 'block';
+            noteLabel.textContent  = 'Describe the defect found';
+        }
+
+        updateButtonStyles(itemId, state);
+        refreshProgressAndStatus();
+    }
+
+    function updateNote(itemId, value) {
+        document.getElementById('note_hidden_' + itemId).value = value;
+    }
+
+    function updateButtonStyles(itemId, state) {
+        var buttons = {
+            'Good':      document.getElementById('btn_good_' + itemId),
+            'Attention': document.getElementById('btn_attention_' + itemId),
+            'Defect':    document.getElementById('btn_defect_' + itemId)
+        };
+
+        Object.keys(buttons).forEach(function(key) {
+            buttons[key].style.background  = '#fff';
+            buttons[key].style.borderColor = '#dee2e6';
+            buttons[key].style.color       = '#adb5bd';
+        });
+
+        if (state === 'Good') {
+            buttons['Good'].style.background  = '#EAF3DE';
+            buttons['Good'].style.borderColor = '#3B6D11';
+            buttons['Good'].style.color       = '#27500A';
+        } else if (state === 'Attention') {
+            buttons['Attention'].style.background  = '#FAEEDA';
+            buttons['Attention'].style.borderColor = '#854F0B';
+            buttons['Attention'].style.color       = '#633806';
+        } else {
+            buttons['Defect'].style.background  = '#FCEBEB';
+            buttons['Defect'].style.borderColor = '#A32D2D';
+            buttons['Defect'].style.color       = '#791F1F';
+        }
+    }
+
+    function refreshProgressAndStatus() {
+        var allStateInputs = document.querySelectorAll('input[id^="state_"]');
+        var checkedCount = 0;
+
+        allStateInputs.forEach(function(input) {
+            if (input.value !== '') { checkedCount++; }
+        });
+
+        updateSectionProgress();
+
+        var statusDot  = document.getElementById('statusDot');
+        var statusText = document.getElementById('statusText');
+        var statusSub  = document.getElementById('statusSub');
+        var statusBar  = document.getElementById('statusBar');
+        var submitBtn  = document.getElementById('submitBtn');
+        var allDone    = checkedCount === totalItems;
+
+        if (!allDone) {
+            statusDot.style.background  = '#adb5bd';
+            statusText.textContent      = 'In progress';
+            statusSub.textContent       = checkedCount + ' of ' + totalItems + ' items checked';
+            statusBar.style.background  = '#f8f9fa';
+            statusBar.style.borderColor = '#e9ecef';
+            submitBtn.disabled          = true;
+            return;
+        }
+
+        statusDot.style.background   = '#3B6D11';
+        statusText.textContent       = 'Ready to submit';
+        statusSub.textContent        = 'All items checked';
+        statusBar.style.background   = '#EAF3DE';
+        statusBar.style.borderColor  = '#3B6D11';
+        submitBtn.disabled           = false;
+        submitBtn.textContent        = 'Submit Inspection';
+        submitBtn.style.background   = '#008080';
+    }
+
+    function updateSectionProgress() {
+        document.querySelectorAll('.section-card[id^="sec_"]').forEach(function(section) {
+            var stateInputs = section.querySelectorAll('input[id^="state_"]');
+            var total   = stateInputs.length;
+            var checked = Array.from(stateInputs).filter(function(i) {
+                return i.value !== '';
+            }).length;
+            var percentage = total > 0 ? (checked / total) * 100 : 0;
+            var sectionId  = section.id;
+            var bar = document.getElementById('prog_' + sectionId);
+            var txt = document.getElementById('txt_'  + sectionId);
+            if (bar) { bar.style.width    = percentage + '%'; }
+            if (txt) { txt.textContent    = checked + '/' + total; }
+        });
+    }
+
+    // ─── CAPTURA DE FOTO ─────────────────────────────────────────────────────
+
+    var PHOTO_MAX_WIDTH    = 800;
+    var PHOTO_JPEG_QUALITY = 0.75;
+
+    function handlePhotoCapture(itemId, input) {
+        var file = input.files[0];
+        if (!file) { return; }
+
+        var statusEl  = document.getElementById('photo_status_'  + itemId);
+        var previewEl = document.getElementById('photo_preview_' + itemId);
+        var imgEl     = document.getElementById('photo_img_'     + itemId);
+        var btnEl     = document.getElementById('photo_btn_'     + itemId);
+
+        statusEl.style.display  = 'block';
+        statusEl.style.color    = '#6c757d';
+        statusEl.textContent    = 'Compressing...';
+        previewEl.style.display = 'none';
+        btnEl.disabled          = true;
+
+        var reader = new FileReader();
+
+        reader.onload = function(event) {
+            var img = new Image();
+
+            img.onload = function() {
+                var width  = img.width;
+                var height = img.height;
+
+                if (width > PHOTO_MAX_WIDTH) {
+                    height = Math.round(height * (PHOTO_MAX_WIDTH / width));
+                    width  = PHOTO_MAX_WIDTH;
+                }
+
+                var canvas    = document.createElement('canvas');
+                canvas.width  = width;
+                canvas.height = height;
+
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(function(blob) {
+                    uploadPhoto(itemId, blob, statusEl, previewEl, imgEl, btnEl, event.target.result);
+                }, 'image/jpeg', PHOTO_JPEG_QUALITY);
+            };
+
+            img.src = event.target.result;
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    function uploadPhoto(itemId, blob, statusEl, previewEl, imgEl, btnEl, dataUrl) {
+        statusEl.textContent = 'Uploading...';
+
+        var formData = new FormData();
+        formData.append('photoFile',       blob, 'photo.jpg');
+        formData.append('checklistItemId', itemId);
+
+        var antiforgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        fetch('/Walkaround/UploadPhoto', {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': antiforgeryToken },
+            body: formData
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                return response.json().then(function(err) {
+                    throw new Error(err.error || 'Upload failed.');
+                });
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            imgEl.src               = dataUrl;
+            previewEl.style.display = 'block';
+            statusEl.style.display  = 'none';
+            btnEl.disabled          = false;
+            btnEl.innerHTML         = '<i class="bi bi-camera-fill"></i> Replace Photo';
+            btnEl.style.borderColor = '#3B6D11';
+            btnEl.style.color       = '#3B6D11';
+        })
+        .catch(function(error) {
+            statusEl.style.color = '#A32D2D';
+            statusEl.textContent = 'Upload failed: ' + error.message;
+            btnEl.disabled       = false;
+        });
+    }
+
+    // ─── GPS ─────────────────────────────────────────────────────────────────
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (navigator.geolocation) {
+            var submitButton = document.getElementById('submitBtn');
+            submitButton.textContent = 'Getting GPS location...';
+
+            var gpsTimeout = setTimeout(function() {
+                submitButton.textContent = 'Submit Inspection';
+                refreshProgressAndStatus();
+            }, 5000);
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    clearTimeout(gpsTimeout);
+                    document.getElementById('lat').value = position.coords.latitude;
+                    document.getElementById('lon').value = position.coords.longitude;
+                    refreshProgressAndStatus();
+                },
+                function() {
+                    clearTimeout(gpsTimeout);
+                    refreshProgressAndStatus();
+                }
+            );
+        }
+    });
+</script>
+}

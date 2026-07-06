@@ -1,0 +1,87 @@
+@model JADirect.Domain.Entities.Vehicle
+@using JADirect.Domain.Enums
+
+<style>
+    .text-teal { color: #008080; }
+    .btn-save-teal {
+        background-color: #008080;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+    .btn-save-teal:hover {
+        background-color: #006666;
+        transform: scale(1.02);
+        color: white;
+    }
+
+    .btn-cancel-hover {
+        border-radius: 10px;
+        transition: 0.3s;
+    }
+    .btn-cancel-hover:hover {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-action="Index" class="text-decoration-none" style="color: #008080;">Fleet</a>
+            </li>
+            <li class="breadcrumb-item active">New Vehicle</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0" style="border-radius: 20px">
+                <div class="card-body p-4">
+                    <h2 class="fw-bold mb-4 text-center text-teal">Register Vehicle</h2>
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">REGISTRATION NUMBER (PLATE)</label>
+                            <input asp-for="RegistrationNo" class="form-control" style="border-radius: 10px;" placeholder="e.g., 231-D-12345" required/>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold">MANUFACTURER</label>
+                                <input asp-for="Manufacturer" class="form-control" style="border-radius: 10px;" required/>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold">MODEL</label>
+                                <input asp-for="Model" class="form-control" style="border-radius: 10px;" required/>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold">VEHICLE TYPE</label>
+                                <select asp-for="VehicleType" class="form-select" style="border-radius: 10px"
+                                        asp-items="Html.GetEnumSelectList<VehicleType>()"></select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-secondary small fw-bold">INITIAL KM</label>
+                                <input asp-for="CurrentKm" type="number" min="0" class="form-control" style="border-radius: 10px;" required/>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-save-teal w-100 py-2">Save Vehicle</button>
+                            <a asp-action="Index" class="btn btn-light btn-cancel-hover w-100 py-2">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

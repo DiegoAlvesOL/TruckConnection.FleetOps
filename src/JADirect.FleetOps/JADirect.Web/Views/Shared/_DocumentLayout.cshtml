@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@ViewData["Title"] — JADirect FleetOps</title>
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+          asp-append-version="true" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+</head>
+<body style="background-color: #f0fdfa; min-height: 100vh;">
+
+@* Barra mínima de identidade — sem navegação, sem links do sistema.
+       Presente para autenticar o documento como emitido pela DCODE Solutions.
+       Equivalente ao timbre de um documento oficial impresso. *@
+<div style="background-color: #008080;
+                padding: 0.6rem 1.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;">
+    <img src="~/images/logo-white.png"
+         alt="JADirect FleetOps"
+         style="height: 26px;" />
+    <span style="font-size: 0.7rem; color: #f0fdfa; font-weight: 500;">
+            Official Document — JADirect FleetOps
+        </span>
+</div>
+
+<main>
+    @RenderBody()
+</main>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>
